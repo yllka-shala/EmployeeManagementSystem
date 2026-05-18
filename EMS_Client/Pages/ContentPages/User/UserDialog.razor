@@ -1,0 +1,76 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">User</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+
+                    <MudSelect @bind-Value="model.RoleId" Label="Role" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Roles)
+                        {
+                            <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudCheckBox @bind-Value="model.IsActive" Label="Is Active"></MudCheckBox>
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public User model { get; set; } = new();
+
+    public List<Roles> _Roles = new List<Roles>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Roles = await rolesService.GetAll(Constants.RoleBaseUrl);
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Update
+    private async Task HandleSaveOperationEvent(User obj)
+    {
+        bool successCheck = false;
+
+        var result = await accountService.UpdateUser(obj);
+        successCheck = DisplayMessage(result.Flag);
+    }
+}

@@ -1,0 +1,141 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Employee</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudTextField T="string" Label="FirstName" Variant="Variant.Outlined"
+                                  @bind-Value="model.FirstName" For="@(() => model.FirstName)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudTextField T="string" Label="LastName" Variant="Variant.Outlined"
+                                  @bind-Value="model.LastName" For="@(() => model.LastName)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudTextField T="string" Label="Email" Variant="Variant.Outlined"
+                                  @bind-Value="model.Email" For="@(() => model.Email)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudTextField T="string" Label="Phone" Variant="Variant.Outlined"
+                                  @bind-Value="model.Phone" For="@(() => model.Phone)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudDatePicker Label="DateOfBirth" @bind-Date="model.DateOfBirth" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.DateOfBirth)" ShowToolbar="false" />
+
+                    <MudDatePicker Label="HireDate" @bind-Date="model.HireDate" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.HireDate)" ShowToolbar="false" />
+
+                    <MudSelect T="int?" @bind-Value="model.DepartmentId" Label="Department" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Department)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="int?" @bind-Value="model.RoleId" Label="Role" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Role)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="int?" @bind-Value="model.ManagerId" Label="Manager" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Employee)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.FirstName @item.LastName</MudSelectItem>
+                        }
+                    </MudSelect>
+
+
+                    <MudTextField T="decimal" Label="Salary" Variant="Variant.Outlined"
+                                  @bind-Value="model.Salary" For="@(() => model.Salary)"
+                                  InputType="InputType.Number" Class="mt-2" />
+
+                    <MudSelect @bind-Value="model.Status" Label="Status" Variant="Variant.Outlined" Placeholder="Select">
+                        @foreach (var status in Enum.GetValues(typeof(EmployeeStatus)).Cast<EmployeeStatus>())
+                        {
+                            <MudSelectItem Value="status">@status</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="int?" @bind-Value="model.PositionId" Label="Position" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Position)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Employee model { get; set; } = new();
+
+    public List<Department> _Department = new List<Department>();
+    public List<Roles> _Role = new List<Roles>();
+    public List<Employee> _Employee = new List<Employee>();
+    public List<EmployeePosition> _Position = new List<EmployeePosition>();
+    private EmployeeStatus _status;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Department = await departmentService.GetAll(Constants.DepartmentBaseUrl);
+        _Role = await rolesService.GetAll(Constants.RoleBaseUrl);
+        _Employee = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        _Position = await positionService.GetAll(Constants.PositionBaseUrl);
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(Employee obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await employeeService.Update(obj, Constants.EmployeeBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await employeeService.Insert(obj, Constants.EmployeeBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+}

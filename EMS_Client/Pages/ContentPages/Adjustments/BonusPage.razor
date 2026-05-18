@@ -1,0 +1,103 @@
+﻿@page "/BonusPage"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5 mb-5">
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">Bonus</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           Class="mt-2 mr-2"
+                           @onclick="() => OpenDialogAsync(new Bonus())">
+                    Add Bonus
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTable Items="@Bonuses" Hover="true" Striped="true" FixedHeader="true" Height="525px" Elevation="0">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Employee</MudTh>
+                    <MudTh>Amount</MudTh>
+                    <MudTh>Reason</MudTh>
+                    <MudTh>AwardedDate</MudTh>
+                    <MudTh>CreatedAt</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@(Bonuses.IndexOf(context) + 1)</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="Employee">@context.Employee.FirstName @context.Employee.LastName</MudTd>
+                    <MudTd DataLabel="Amount">@context.Amount</MudTd>
+                    <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                    <MudTd DataLabel="AwardedDate">@context.AwardedDate</MudTd>
+                    <MudTd DataLabel="CreatedAt">@context.CreatedAt</MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => EditClicked(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteClicked(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">No Bonus Added Yet!</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    public List<Bonus> Bonuses { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Bonuses = await bonusService.GetAll(Constants.BonusBaseUrl);
+    }
+
+    private async Task OpenDialogAsync(Bonus? bonus = null)
+    {
+        var parameters = new DialogParameters();
+
+        if (bonus != null)
+            parameters["model"] = bonus;
+
+        var dialog = await DialogService.ShowAsync<BonusDialog>("Bonus Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Bonuses = await bonusService.GetAll(Constants.BonusBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(Bonus obj)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+                                "Confirm Delete",
+                                $"Are you sure you wanna delete {obj.EmployeeId}?",
+                                yesText: "Delete",
+                                cancelText: "Cancel");
+
+        if (result == null || !result.Value)
+            return;
+
+        var response = await bonusService.DeleteById(obj.Id, Constants.BonusBaseUrl);
+        if (response.Flag)
+        {
+            Snackbar.Add("Deleted Successfuly!", Severity.Success); ;
+            Bonuses = await bonusService.GetAll(Constants.BonusBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Edit
+    private async Task EditClicked(Bonus obj)
+    {
+        await OpenDialogAsync(obj);
+    }
+}

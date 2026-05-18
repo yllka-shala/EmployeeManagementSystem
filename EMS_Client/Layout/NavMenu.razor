@@ -1,0 +1,75 @@
+﻿
+<AuthorizeView>
+    <Authorized>
+        <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home"
+                        IconColor="Color.Primary">Home</MudNavLink> 
+
+            <MudNavGroup Title="Employee" Expanded="false" Icon="@Icons.Material.Filled.Person" IconColor="Color.Primary">
+                <MudNavLink Href="/EmployeePage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PersonAdd"
+                            IconColor="Color.Primary">Employee</MudNavLink>
+
+                <MudNavLink Href="/EmployeeDocumentPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Source"
+                            IconColor="Color.Primary">Employee Documents</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Department" Expanded="false" Icon="@Icons.Material.Filled.AccountTree" IconColor="Color.Primary">
+                <MudNavLink Href="/DepartmentPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Workspaces"
+                            IconColor="Color.Primary">Department</MudNavLink>
+
+                <MudNavLink Href="/PositionPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.PersonPin"
+                            IconColor="Color.Primary">Position</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Adjustments" Expanded="false" Icon="@Icons.Material.Filled.Money" IconColor="Color.Primary">
+                <MudNavLink Href="/BonusPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AttachMoney"
+                            IconColor="Color.Primary">Bonus</MudNavLink>
+
+                <MudNavLink Href="/DeductionPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MoneyOff"
+                            IconColor="Color.Primary">Deduction</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Assets" Expanded="false" Icon="@Icons.Material.Filled.DesktopWindows" IconColor="Color.Primary">
+                <MudNavLink Href="/AssetPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Laptop"
+                            IconColor="Color.Primary">Asset</MudNavLink>
+
+                <MudNavLink Href="/EmployeeAssetsPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ScreenSearchDesktop"
+                            IconColor="Color.Primary">Employee Assets</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Attendance" Expanded="false" Icon="@Icons.Material.Filled.AccessTimeFilled" IconColor="Color.Primary">
+                <MudNavLink Href="/AttendancePage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MoreTime"
+                            IconColor="Color.Primary">Attendance</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="LeaveRequest" Expanded="false" Icon="@Icons.Material.Filled.TimerOff" IconColor="Color.Primary">
+                <MudNavLink Href="/LeaveRequestPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Timelapse"
+                            IconColor="Color.Primary">Leave Request</MudNavLink>
+                <MudNavLink Href="/LeaveTypePage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.WorkOff"
+                            IconColor="Color.Primary">Leave Type</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="PerformanceReview" Expanded="false" Icon="@Icons.Material.Filled.PlaylistAddCheckCircle" IconColor="Color.Primary">
+                <MudNavLink Href="/PerformanceReviewPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.WorkHistory"
+                            IconColor="Color.Primary">Performance Review</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Notifications" Expanded="false" Icon="@Icons.Material.Filled.NotificationsActive" IconColor="Color.Primary">
+                <MudNavLink Href="/NotificationPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.CircleNotifications"
+                            IconColor="Color.Primary">Notification</MudNavLink>
+                <MudNavLink Href="/EmployeeNotificationPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.NotificationAdd"
+                            IconColor="Color.Primary">Employee Notification</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Settings" Expanded="false" Icon="@Icons.Material.Filled.Settings" IconColor="Color.Primary">
+                <MudNavLink Href="/UsersPage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Group"
+                            IconColor="Color.Primary">Users</MudNavLink>
+                <MudNavLink Href="/RolePage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.VerifiedUser"
+                            IconColor="Color.Primary">Role</MudNavLink>
+            </MudNavGroup>
+        </MudNavMenu>
+    </Authorized>
+</AuthorizeView>
+
+
+

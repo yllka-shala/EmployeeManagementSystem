@@ -1,0 +1,94 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Attendance</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudSelect T="int?" @bind-Value="model.EmployeeId" Label="Employee" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Employees)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.FirstName @item.LastName</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudDatePicker Label="CheckIn" @bind-Date="model.CheckIn" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.CheckIn)" ShowToolbar="false" />
+
+                    <MudDatePicker Label="CheckOut" @bind-Date="model.CheckOut" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.CheckOut)" ShowToolbar="false" />
+
+                    <MudSelect @bind-Value="model.Status" Label="Status" Variant="Variant.Outlined" Placeholder="Select">
+                        @foreach (var status in Enum.GetValues(typeof(AttendanceStatus)).Cast<AttendanceStatus>())
+                        {
+                            <MudSelectItem Value="status">@status</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Attendance model { get; set; } = new();
+
+    public List<Employee> _Employees = new List<Employee>();
+
+    private AttendanceStatus _status;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(Attendance obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await attendanceService.Update(obj, Constants.AttendanceBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await attendanceService.Insert(obj, Constants.AttendanceBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+}

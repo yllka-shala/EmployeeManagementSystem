@@ -1,0 +1,17 @@
+﻿@page "/AuthenticationPage"
+
+@code {
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        var user = (await AuthenticationState).User;
+        if (user.Identity!.IsAuthenticated)
+        {
+            NavManager.NavigateTo("/");
+        }
+        else if (user.Identity == null || !user.Identity.IsAuthenticated)
+        {
+            NavManager.NavigateTo("/LoginPage", forceLoad: true);
+        }
+    }
+}

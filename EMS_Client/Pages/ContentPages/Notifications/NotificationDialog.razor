@@ -1,0 +1,81 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Vacation</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudTextField T="string" Label="Title" Variant="Variant.Outlined"
+                                  @bind-Value="model.Title" For="@(() => model.Title)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudTextField T="string" Label="Message" Variant="Variant.Outlined"
+                                  @bind-Value="model.Message" For="@(() => model.Message)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudSelect @bind-Value="model.Type" Label="Type" Variant="Variant.Outlined" Placeholder="Select">
+                        @foreach (var type in Enum.GetValues(typeof(NotificationType)).Cast<NotificationType>())
+                        {
+                            <MudSelectItem Value="type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Notification model { get; set; } = new();
+
+    private NotificationType _type;
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(Notification obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await notificationService.Update(obj, Constants.NotificationBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await notificationService.Insert(obj, Constants.NotificationBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+}

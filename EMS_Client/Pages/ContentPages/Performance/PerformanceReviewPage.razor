@@ -1,0 +1,109 @@
+﻿@page "/PerformanceReviewPage"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5 mb-5">
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">Performance Review</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           Class="mt-2 mr-2"
+                           @onclick="() => OpenDialogAsync(new PerformanceReview())">
+                    Add Performance Review
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTable Items="@_PerformanceReview" Hover="true" Striped="true" FixedHeader="true" Height="525px" Elevation="0">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Employee</MudTh>
+                    <MudTh>Reviewer</MudTh>
+                    <MudTh>ReviewDate</MudTh>
+                    <MudTh>Rating</MudTh>
+                    <MudTh>Comments</MudTh>
+                    <MudTh>CreatedAt</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@(_PerformanceReview.IndexOf(context) + 1)</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="Employee">@context.Employee.FirstName @context.Employee.LastName</MudTd>
+                    <MudTd DataLabel="Reviewer">@context.Reviewer.FirstName @context.Reviewer.LastName</MudTd>
+                    <MudTd DataLabel="ReviewDate">@context.ReviewDate</MudTd>
+                    <MudTd DataLabel="Rating">@context.Rating</MudTd>
+                    <MudTd DataLabel="Comments">@context.Comments</MudTd>
+                    <MudTd DataLabel="CreatedAt">@context.CreatedAt</MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => EditClicked(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteClicked(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">No Performance Reviews Added Yet!</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    public List<PerformanceReview> _PerformanceReview { get; set; } = new();
+    public List<Employee> _Employees { get; set; } = new();
+    public List<Employee> _Reviewer { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _PerformanceReview = await performanceReviewService.GetAll(Constants.PerformanceReviewBaseUrl);
+        _Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        _Reviewer = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+    }
+
+    private async Task OpenDialogAsync(PerformanceReview? performance = null)
+    {
+        var parameters = new DialogParameters();
+
+        if (performance != null)
+            parameters["model"] = performance;
+
+        var dialog = await DialogService.ShowAsync<PerformanceReviewDialog>("Performance Review Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            _PerformanceReview = await performanceReviewService.GetAll(Constants.PerformanceReviewBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(PerformanceReview obj)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+                                "Confirm Delete",
+                                $"Are you sure you wanna delete {obj.EmployeeId}?",
+                                yesText: "Delete",
+                                cancelText: "Cancel");
+
+        if (result == null || !result.Value)
+            return;
+
+        var response = await performanceReviewService.DeleteById(obj.Id, Constants.PerformanceReviewBaseUrl);
+        if (response.Flag)
+        {
+            Snackbar.Add("Deleted Successfuly!", Severity.Success); ;
+            _PerformanceReview = await performanceReviewService.GetAll(Constants.PerformanceReviewBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Edit
+    private async Task EditClicked(PerformanceReview obj)
+    {
+        await OpenDialogAsync(obj);
+    }
+}

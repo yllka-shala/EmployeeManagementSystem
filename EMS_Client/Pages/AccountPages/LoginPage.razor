@@ -1,0 +1,89 @@
+﻿@page "/LoginPage"
+@layout AuthenticationLayout
+
+<div class="d-flex justify-center align-center" style="height: 100vh; width: 100%;">
+    <MudContainer MaxWidth="MaxWidth.Small">
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="4" Style="background: rgba(255,255,255,0.9); border-radius: 10px;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center" Color="Color.Primary">Login to Your Account</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudTextField T="string" Label="Email" Variant="Variant.Outlined"
+                                  @bind-Value="model.Email" For="@(() => model.Email)"
+                                  InputType="InputType.Email" Class="mt-4" />
+
+                    <MudTextField T="string" Label="Password" Variant="Variant.Outlined"
+                                  @bind-Value="model.Password" For="@(() => model.Password)"
+                                  InputType="InputType.Password" Class="mt-4" />
+
+                    <ValidationSummary />
+                </MudCardContent>
+
+                <MudCardActions Class="d-flex justify-space-between align-center px-4 pb-4">
+                    <MudLink href="/RegisterPage" Typo="Typo.body2">Don't have an account? Sign Up</MudLink>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                        Login
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </MudContainer>
+</div>
+
+@code {
+    Login model = new Login();
+
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        await CheckUserAuthentication();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleLoginOperation(model);
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Login Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Login
+    private async Task HandleLoginOperation(Login obj)
+    {
+        bool successCheck = false;
+        var result = await accountService.SignInAsync(obj);
+        if (result.Flag)
+        {
+            successCheck = DisplayMessage(result.Flag);
+            var customStateAuthProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+            await customStateAuthProvider.UpdateAuthenticationState(new UserSession() { Token = result.Token, RefreshToken = result.RefreshToken });
+            NavManager.NavigateTo("/AuthenticationPage", forceLoad: true);
+        }
+    }
+
+    private async Task CheckUserAuthentication()
+    {
+        var user = (await AuthenticationState).User;
+        bool isUserAuthenticated = user.Identity!.IsAuthenticated;
+        if (isUserAuthenticated)
+        {
+            NavManager.NavigateTo("/");
+        }
+    }
+}

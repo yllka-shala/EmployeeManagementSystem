@@ -1,0 +1,72 @@
+﻿@page "/ProfileMenuPage"
+@using System.Security.Claims
+
+<MudMenu>
+    <ActivatorContent>
+        <div @onclick="@context.ToggleAsync" style="cursor: pointer">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.body1" Class="mr-2">@_username</MudText>
+                <MudAvatar Style="width: 30px; height: 30px;">
+                    @if (!string.IsNullOrEmpty(model.ProfilePictureFileName))
+                    {
+                        <MudImage Src="@($"https://localhost:7217/Uploads/{model.ProfilePictureFileName}")" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Medium" Color="Color.Primary"></MudIcon>
+                    }
+
+                </MudAvatar>
+            </MudStack>
+        </div>
+    </ActivatorContent>
+    <ChildContent>
+        <MudMenuItem OnClick="ProfileClicked" Icon="@Icons.Material.Filled.Person" IconColor="Color.Primary">
+            <MudText Color="Color.Primary">Profile</MudText>
+        </MudMenuItem>
+        <MudDivider />
+        <MudMenuItem OnClick="LogoutClicked" Icon="@Icons.Material.Filled.Logout" IconColor="Color.Primary">
+            <MudText Color="Color.Primary">Logout</MudText>
+        </MudMenuItem>
+    </ChildContent>
+</MudMenu>
+
+@code {
+
+    private string _username = "User";
+    UserProfile model = new UserProfile();
+
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationState;
+        var user = authState.User;
+
+        if (user.Identity is { IsAuthenticated: true })
+        {
+            _username = user.Identity.Name ?? "User";
+
+            var client = await getHttpClient.GetPrivateHttpClient();
+            model.Id = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var response = await client.GetAsync($"api/user/user-image/{model.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                model.ProfilePictureFileName = await response.Content.ReadAsStringAsync();
+            }
+        }
+    }
+
+    public void ProfileClicked()
+    {
+        NavManager.NavigateTo("/UserProfilePage");
+    }
+
+    public async Task LogoutClicked()
+    {
+        var logout = new UserSession();
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthStateProvider;
+        await customAuthStateProvider.UpdateAuthenticationState(logout);
+        NavManager.NavigateTo("/LoginPage", replace: true, forceLoad: true);
+    }
+}

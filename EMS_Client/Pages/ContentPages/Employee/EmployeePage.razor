@@ -1,0 +1,134 @@
+﻿@page "/EmployeePage"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5 mb-5">
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">Employee</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           Class="mt-2 mr-2"
+                           @onclick="() => OpenDialogAsync(new Employee())">
+                    Add Employee
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTable Items="@Employees" Hover="true" Striped="true" FixedHeader="true" Height="525px" Elevation="0">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>FirstName</MudTh>
+                    <MudTh>LastName</MudTh>
+                    <MudTh>Email</MudTh>
+                    <MudTh>Phone</MudTh>
+                    <MudTh>DateOfBirth</MudTh>
+                    <MudTh>HireDate</MudTh>
+                    <MudTh>Department</MudTh>
+                    <MudTh>Role</MudTh>
+                    <MudTh>Manager</MudTh>
+                    <MudTh>Salary</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Position</MudTh>
+                    <MudTh>CreatedAt</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@(Employees.IndexOf(context) + 1)</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="FirstName">@context.FirstName</MudTd>
+                    <MudTd DataLabel="LastName">@context.LastName</MudTd>
+                    <MudTd DataLabel="Email">@context.Email</MudTd>
+                    <MudTd DataLabel="Phone">@context.Phone</MudTd>
+                    <MudTd DataLabel="DateOfBirth">@context.DateOfBirth</MudTd>
+                    <MudTd DataLabel="HireDate">@context.HireDate</MudTd>
+                    <MudTd DataLabel="Department">@context.Department.Name</MudTd>
+                    <MudTd DataLabel="Role">@context.Role.Name</MudTd>
+                    @if(context.Manager != null)
+                    {
+                        <MudTd DataLabel="Manager">@context.Manager.FirstName @context.Manager.LastName</MudTd>
+                    }
+                    else
+                    {
+                        <MudTd DataLabel="Manager">No Manager</MudTd>
+                    }
+                    <MudTd DataLabel="Salary">@context.Salary</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
+                    <MudTd DataLabel="Position">@context.Position.Title</MudTd>
+                    <MudTd DataLabel="CreatedAt">@context.CreatedAt</MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => EditClicked(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteClicked(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">No Employee Added Yet!</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    public List<Employee> Employees { get; set; } = new ();
+    public List<Department> Departments { get; set; } = new ();
+    public List<Roles> Roles { get; set; } = new ();
+    public List<Employee> Managers { get; set; } = new ();
+    public List<EmployeePosition> Positions { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        Departments = await departmentService.GetAll(Constants.DepartmentBaseUrl);
+        Roles = await rolesService.GetAll(Constants.RoleBaseUrl);
+        Managers = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        Positions = await positionService.GetAll(Constants.PositionBaseUrl);
+    }
+
+    private async Task OpenDialogAsync(Employee? employee = null)
+    {
+        var parameters = new DialogParameters();
+
+        if (employee != null)
+            parameters["model"] = employee;
+
+        var dialog = await DialogService.ShowAsync<EmployeeDialog>("Employee Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(Employee obj)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+                                "Confirm Delete",
+                                $"Are you sure you wanna delete {obj.FirstName}?",
+                                yesText: "Delete",
+                                cancelText: "Cancel");
+
+        if (result == null || !result.Value)
+            return;
+
+        var response = await employeeService.DeleteById(obj.Id, Constants.EmployeeBaseUrl);
+        if (response.Flag)
+        {
+            Snackbar.Add("Deleted Successfuly!", Severity.Success); ;
+            Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Edit
+    private async Task EditClicked(Employee obj)
+    {
+        await OpenDialogAsync(obj);
+    }
+}

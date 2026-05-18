@@ -1,0 +1,104 @@
+﻿@page "/DeductionPage"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5 mb-5">
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">Deduction</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           Class="mt-2 mr-2"
+                           @onclick="() => OpenDialogAsync(new Deduction())">
+                    Add Deduction
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTable Items="@Deductions" Hover="true" Striped="true" FixedHeader="true" Height="525px" Elevation="0">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Employee</MudTh>
+                    <MudTh>Amount</MudTh>
+                    <MudTh>Reason</MudTh>
+                    <MudTh>DeductionDate</MudTh>
+                    <MudTh>CreatedAt</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@(Deductions.IndexOf(context) + 1)</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="Employee">@context.Employee.FirstName @context.Employee.LastName</MudTd>
+                    <MudTd DataLabel="Amount">@context.Amount</MudTd>
+                    <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                    <MudTd DataLabel="DeductionDate">@context.DeductionDate</MudTd>
+                    <MudTd DataLabel="CreatedAt">@context.CreatedAt</MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => EditClicked(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteClicked(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">No Deduction Added Yet!</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+
+@code {
+    public List<Deduction> Deductions = new List<Deduction>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Deductions = await deductionService.GetAll(Constants.DeductionBaseUrl);
+    }
+
+    private async Task OpenDialogAsync(Deduction? deduction = null)
+    {
+        var parameters = new DialogParameters();
+
+        if (deduction != null)
+            parameters["model"] = deduction;
+
+        var dialog = await DialogService.ShowAsync<DeductionDialog>("Deduction Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Deductions = await deductionService.GetAll(Constants.DeductionBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(Deduction obj)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+                                "Confirm Delete",
+                                $"Are you sure you wanna delete {obj.EmployeeId}?",
+                                yesText: "Delete",
+                                cancelText: "Cancel");
+
+        if (result == null || !result.Value)
+            return;
+
+        var response = await deductionService.DeleteById(obj.Id, Constants.DeductionBaseUrl);
+        if (response.Flag)
+        {
+            Snackbar.Add("Deleted Successfuly!", Severity.Success); ;
+            Deductions = await deductionService.GetAll(Constants.DeductionBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Edit
+    private async Task EditClicked(Deduction obj)
+    {
+        await OpenDialogAsync(obj);
+    }
+}

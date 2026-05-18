@@ -1,0 +1,96 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Position</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudTextField T="string" Label="Title" Variant="Variant.Outlined"
+                                  @bind-Value="model.Title" For="@(() => model.Title)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudTextField T="string" Label="Description" Variant="Variant.Outlined"
+                                  @bind-Value="model.Description" For="@(() => model.Description)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudSelect T="int?" @bind-Value="model.DepartmentId" Label="Department" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Department)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudTextField T="decimal?" Label="MinSalary" Variant="Variant.Outlined"
+                                  @bind-Value="model.MinSalary" For="@(() => model.MinSalary)"
+                                  InputType="InputType.Number" Class="mt-2" />
+
+                    <MudTextField T="decimal?" Label="MaxSalary" Variant="Variant.Outlined"
+                                  @bind-Value="model.MaxSalary" For="@(() => model.MaxSalary)"
+                                  InputType="InputType.Number" Class="mt-2" />
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public EmployeePosition model { get; set; } = new();
+
+    public List<Department> _Department = new List<Department>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Department = await departmentService.GetAll(Constants.DepartmentBaseUrl);
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(EmployeePosition obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await positionService.Update(obj, Constants.PositionBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await positionService.Insert(obj, Constants.PositionBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+}

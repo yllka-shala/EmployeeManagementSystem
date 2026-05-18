@@ -1,0 +1,107 @@
+﻿@page "/PositionPage"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5 mb-5">
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">Position</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           Class="mt-2 mr-2"
+                           @onclick="() => OpenDialogAsync(new EmployeePosition())">
+                    Add Position
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTable Items="@Positions" Hover="true" Striped="true" FixedHeader="true" Height="525px" Elevation="0">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Title</MudTh>
+                    <MudTh>Description</MudTh>
+                    <MudTh>Department</MudTh>
+                    <MudTh>MinSalary</MudTh>
+                    <MudTh>MaxSalary</MudTh>
+                    <MudTh>CreatedAt</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@(Positions.IndexOf(context) + 1)</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="Title">@context.Title</MudTd>
+                    <MudTd DataLabel="Description">@context.Description</MudTd>
+                    <MudTd DataLabel="Department">@context.Department?.Name</MudTd>
+                    <MudTd DataLabel="MinSalary">@context.MinSalary</MudTd>
+                    <MudTd DataLabel="MaxSalary">@context.MaxSalary</MudTd>
+                    <MudTd DataLabel="CreatedAt">@context.CreatedAt</MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => EditClicked(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteClicked(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">No Employee Position Added Yet!</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    public List<EmployeePosition> Positions { get; set; } = new();
+    public List<Department> Departments { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Positions = await positionService.GetAll(Constants.PositionBaseUrl);
+        Departments = await departmentService.GetAll(Constants.DepartmentBaseUrl);
+    }
+
+    private async Task OpenDialogAsync(EmployeePosition? position = null)
+    {
+        var parameters = new DialogParameters();
+
+        if (position != null)
+            parameters["model"] = position;
+
+        var dialog = await DialogService.ShowAsync<PositionDialog>("Position Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Positions = await positionService.GetAll(Constants.PositionBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(EmployeePosition obj)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+                                "Confirm Delete",
+                                $"Are you sure you wanna delete {obj.Title}?",
+                                yesText: "Delete",
+                                cancelText: "Cancel");
+
+        if (result == null || !result.Value)
+            return;
+
+        var response = await positionService.DeleteById(obj.Id, Constants.PositionBaseUrl);
+        if (response.Flag)
+        {
+            Snackbar.Add("Deleted Successfuly!", Severity.Success); ;
+            Positions = await positionService.GetAll(Constants.PositionBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Edit
+    private async Task EditClicked(EmployeePosition obj)
+    {
+        await OpenDialogAsync(obj);
+    }
+}

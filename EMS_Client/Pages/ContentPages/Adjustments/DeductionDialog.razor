@@ -1,0 +1,92 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Deduction</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudSelect T="int?" @bind-Value="model.EmployeeId" Label="Employee" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Employees)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.FirstName @item.LastName</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudTextField T="decimal" Label="Amount" Variant="Variant.Outlined"
+                                  @bind-Value="model.Amount" For="@(() => model.Amount)"
+                                  InputType="InputType.Number" Class="mt-2" />
+
+                    <MudTextField T="string" Label="Reason" Variant="Variant.Outlined"
+                                  @bind-Value="model.Reason" For="@(() => model.Reason)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudDatePicker Label="DeductionDate" @bind-Date="model.DeductionDate" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.DeductionDate)" ShowToolbar="false" />
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Deduction model { get; set; } = new();
+
+    public List<Deduction> _Deductions = new List<Deduction>();
+    public List<Employee> _Employees = new List<Employee>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Deductions = await deductionService.GetAll(Constants.DeductionBaseUrl);
+        _Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(Deduction obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await deductionService.Update(obj, Constants.DeductionBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await deductionService.Insert(obj, Constants.DeductionBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+}

@@ -1,0 +1,110 @@
+﻿@page "/UsersPage"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5 mb-5">
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">Users</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTable Items="@Users" Hover="true" Striped="true" FixedHeader="true" Height="525px" Elevation="0">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>ProfilePicture</MudTh>
+                    <MudTh>FirstName</MudTh>
+                    <MudTh>LastName</MudTh>
+                    <MudTh>Email</MudTh>
+                    <MudTh>Role</MudTh>
+                    <MudTh>IsActive</MudTh>
+                    <MudTh>CreatedAt</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@(Users.IndexOf(context) + 1)</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="ProfilePicture">
+                        @if (!string.IsNullOrEmpty(context.ProfilePicture))
+                        {
+                            <MudImage Src="@($"https://localhost:7217/Uploads/{context.ProfilePicture}")" Width="20" Height="20" Class="rounded-full" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" />
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="FirstName">@context.FirstName</MudTd>
+                    <MudTd DataLabel="LastName">@context.LastName</MudTd>
+                    <MudTd DataLabel="Email">@context.Email</MudTd>
+                    <MudTd DataLabel="Role">@context.Role.Name</MudTd>
+                    <MudTd DataLabel="IsActive">@context.IsActive</MudTd>
+                    <MudTd DataLabel="CreatedAt">@context.CreatedAt</MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => EditClicked(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteClicked(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">No User Added Yet!</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+
+    public List<User> Users { get; set; } = new();
+    public List<Roles> Roles { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Users = await accountService.GetUsers();
+        Roles = await rolesService.GetAll(Constants.RoleBaseUrl);
+    }
+
+    private async Task OpenDialogAsync(User? user = null)
+    {
+        var parameters = new DialogParameters();
+
+        if (user != null)
+            parameters["model"] = user;
+
+        var dialog = await DialogService.ShowAsync<UserDialog>("User Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Users = await accountService.GetUsers();
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(User obj)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+                                "Confirm Delete",
+                                $"Are you sure you wanna delete {obj.FirstName}?",
+                                yesText: "Delete",
+                                cancelText: "Cancel");
+
+        if (result == null || !result.Value)
+            return;
+
+        var response = await accountService.DeleteUser(obj.Id);
+        if (response.Flag)
+        {
+            Snackbar.Add("Deleted Successfuly!", Severity.Success); ;
+            Users = await accountService.GetUsers();
+            StateHasChanged();
+        }
+    }
+
+    //Edit
+    private async Task EditClicked(User obj)
+    {
+        await OpenDialogAsync(obj);
+    }
+}

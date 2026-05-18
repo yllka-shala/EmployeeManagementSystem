@@ -1,0 +1,122 @@
+﻿@page "/LeaveRequestPage"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5 mb-5">
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">Leave Request</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           Class="mt-2 mr-2"
+                           @onclick="() => OpenDialogAsync(new LeaveRequest())">
+                    Add Leave Request
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTable Items="@LeaveRequests" Hover="true" Striped="true" FixedHeader="true" Height="525px" Elevation="0">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Employee</MudTh>
+                    <MudTh>LeaveType</MudTh>
+                    <MudTh>StartDate</MudTh>
+                    <MudTh>EndDate</MudTh>
+                    <MudTh>Reason</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Approver</MudTh>
+                    <MudTh>CreatedAt</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@(LeaveRequests.IndexOf(context) + 1)</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="Employee">@context.Employee.FirstName @context.Employee.LastName</MudTd>
+                    <MudTd DataLabel="LeaveType">@context.LeaveType.Name</MudTd>
+                    <MudTd DataLabel="StartDate">@context.StartDate</MudTd>
+                    <MudTd DataLabel="EndDate">@context.EndDate</MudTd>
+                    <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
+                    @if (context.Approver != null)
+                    {
+                        <MudTd DataLabel="Approver">@context.Approver.FirstName @context.Approver.LastName</MudTd>
+                    }
+                    else
+                    {
+                        <MudTd DataLabel="Manager">Not Approved</MudTd>
+                    } 
+                    <MudTd DataLabel="CreatedAt">@context.CreatedAt</MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => EditClicked(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteClicked(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">No Leave Request Added Yet!</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    public List<LeaveRequest> LeaveRequests { get; set; } = new ();
+    public List<Employee> Employees { get; set; } = new();
+    public List<Employee> Approvers { get; set; } = new();
+    public List<LeaveType> LeaveTypes { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        LeaveRequests = await leaveRequestService.GetAll(Constants.LeaveRequestBaseUrl);
+        Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        Approvers = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        LeaveTypes = await leaveTypeService.GetAll(Constants.LeaveTypeBaseUrl);
+    }
+
+    private async Task OpenDialogAsync(LeaveRequest? leave = null)
+    {
+        var parameters = new DialogParameters();
+
+        if (leave != null)
+            parameters["model"] = leave;
+
+        var dialog = await DialogService.ShowAsync<LeaveRequestDialog>("Leave Request Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            LeaveRequests = await leaveRequestService.GetAll(Constants.LeaveRequestBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(LeaveRequest obj)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+                                "Confirm Delete",
+                                $"Are you sure you wanna delete {obj.EmployeeId}?",
+                                yesText: "Delete",
+                                cancelText: "Cancel");
+
+        if (result == null || !result.Value)
+            return;
+
+        var response = await leaveRequestService.DeleteById(obj.Id, Constants.LeaveRequestBaseUrl);
+        if (response.Flag)
+        {
+            Snackbar.Add("Deleted Successfuly!", Severity.Success); ;
+            LeaveRequests = await leaveRequestService.GetAll(Constants.LeaveRequestBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Edit
+    private async Task EditClicked(LeaveRequest obj)
+    {
+        await OpenDialogAsync(obj);
+    }
+}

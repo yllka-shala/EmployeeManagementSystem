@@ -1,0 +1,72 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Department</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudTextField T="string" Label="Name" Variant="Variant.Outlined"
+                                  @bind-Value="model.Name" For="@(() => model.Name)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudTextField T="string" Label="Description" Variant="Variant.Outlined"
+                                  @bind-Value="model.Description" For="@(() => model.Description)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Department model { get; set; } = new();
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(Department obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await departmentService.Update(obj, Constants.DepartmentBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await departmentService.Insert(obj, Constants.DepartmentBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+}

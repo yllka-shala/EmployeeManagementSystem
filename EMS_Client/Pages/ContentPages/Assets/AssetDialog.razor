@@ -1,0 +1,92 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Asset</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudTextField T="string" Label="Name" Variant="Variant.Outlined"
+                                  @bind-Value="model.Name" For="@(() => model.Name)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudTextField T="string" Label="AssetTag" Variant="Variant.Outlined"
+                                  @bind-Value="model.AssetTag" For="@(() => model.AssetTag)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudTextField T="string" Label="Description" Variant="Variant.Outlined"
+                                  @bind-Value="model.Description" For="@(() => model.Description)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudDatePicker Label="PurchaseDate" @bind-Date="model.PurchaseDate" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.PurchaseDate)" ShowToolbar="false" />
+
+                    <MudTextField T="decimal?" Label="Value" Variant="Variant.Outlined"
+                                  @bind-Value="model.Value" For="@(() => model.Value)"
+                                  InputType="InputType.Number" Class="mt-2" />
+
+                    <MudSelect @bind-Value="model.Status" Label="Status" Variant="Variant.Outlined" Placeholder="Select">
+                        @foreach (var status in Enum.GetValues(typeof(AssetStatus)).Cast<AssetStatus>())
+                        {
+                            <MudSelectItem Value="status">@status</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public Asset model { get; set; } = new();
+
+    private AssetStatus _status;
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(Asset obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await assetService.Update(obj, Constants.AssetBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await assetService.Insert(obj, Constants.AssetBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+}

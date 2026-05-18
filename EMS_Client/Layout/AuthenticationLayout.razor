@@ -1,0 +1,18 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<MudContainer MaxWidth="MaxWidth.False" Class="auth-wrapper d-flex align-center justify-center">
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="12">
+            @Body
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+
+}

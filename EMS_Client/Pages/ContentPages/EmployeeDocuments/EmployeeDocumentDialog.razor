@@ -1,0 +1,126 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Employee Documents</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudTextField T="int" Label="Id" Variant="Variant.Outlined"
+                                  @bind-Value="model.Id" For="@(() => model.Id)"
+                                  InputType="InputType.Number" Class="mt-2" Disabled/>
+
+                    <InputFile class="form-control" OnChange="HandleSingleFile" accept=".pdf,.doc,.docx,.jpg,.png" />
+
+                    <MudTextField T="string" Label="FilePath" Variant="Variant.Outlined"
+                                  @bind-Value="model.FilePath" For="@(() => model.FilePath)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                    <MudSelect T="int?" @bind-Value="model.EmployeeId" Label="Employee" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Employees)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.FirstName @item.LastName</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect @bind-Value="model.Category" Label="Category" Variant="Variant.Outlined" Placeholder="Select">
+                        @foreach (var category in Enum.GetValues(typeof(DocumentCategory)).Cast<DocumentCategory>())
+                        {
+                            <MudSelectItem Value="category">@category</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudDatePicker Label="UploadedAt" @bind-Date="model.UploadedAt" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.UploadedAt)" ShowToolbar="false" />
+
+                    <MudDatePicker Label="ExpiryDate" @bind-Date="model.ExpiryDate" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.ExpiryDate)" ShowToolbar="false" />
+
+                    <MudSelect T="int?" @bind-Value="model.UploadedBy" Label="Uploader" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Uploader)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.FirstName @item.LastName</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public EmployeeDocument model { get; set; } = new();
+
+    public List<Employee> _Employees = new List<Employee>();
+    public List<Employee> _Uploader = new List<Employee>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        _Uploader = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(EmployeeDocument obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await employeeDocumentService.Update(obj, Constants.EmployeeDocumentBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await employeeDocumentService.Insert(obj, Constants.EmployeeDocumentBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+
+    private async Task HandleSingleFile(InputFileChangeEventArgs e)
+    {
+        IBrowserFile file = e.File;
+        string contentType = file.ContentType;
+
+        long maxFileSize = 1024 * 1024 * 5;
+
+        var buffers = new byte[file.Size];
+
+        using var stream = file.OpenReadStream(maxFileSize);
+        await stream.ReadAsync(buffers);
+
+        model.Base64ImageData = $"data:{contentType};base64,{Convert.ToBase64String(buffers)}";
+        model.FileName = file.Name;
+    }
+}

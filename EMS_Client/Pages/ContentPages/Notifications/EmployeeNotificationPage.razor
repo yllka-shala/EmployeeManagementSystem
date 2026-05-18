@@ -1,0 +1,105 @@
+﻿@page "/EmployeeNotificationPage"
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-5 mb-5">
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5">Employee Notification</MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.AddCircleOutline"
+                           Class="mt-2 mr-2"
+                           @onclick="() => OpenDialogAsync(new EmployeeNotification())">
+                    Add Employee Notification
+                </MudButton>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudTable Items="@EmployeeNotifications" Hover="true" Striped="true" FixedHeader="true" Height="525px" Elevation="0">
+                <HeaderContent>
+                    <MudTh>#</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Employee</MudTh>
+                    <MudTh>Notification</MudTh>
+                    <MudTh>IsRead</MudTh>
+                    <MudTh>CreatedAt</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="#">@(EmployeeNotifications.IndexOf(context) + 1)</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="Employee">@context.Employee.FirstName @context.Employee.LastName</MudTd>
+                    <MudTd DataLabel="Notification">@context.Notification.Title</MudTd>
+                    <MudTd DataLabel="IsRead">@context.IsRead</MudTd>
+                    <MudTd DataLabel="CreatedAt">@context.CreatedAt</MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Size="Size.Small" OnClick="@(() => EditClicked(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="@(() => DeleteClicked(context))" />
+                    </MudTd>
+                </RowTemplate>
+                <NoRecordsContent>
+                    <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">No Employee Notification Added Yet!</MudAlert>
+                </NoRecordsContent>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    public List<EmployeeNotification> EmployeeNotifications { get; set; } = new();
+    public List<Employee> Employees { get; set; } = new();
+    public List<Notification> Notifications { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        EmployeeNotifications = await employeeNotificationService.GetAll(Constants.EmployeeNotificationBaseUrl);
+        Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        Notifications = await notificationService.GetAll(Constants.NotificationBaseUrl);
+    }
+
+    private async Task OpenDialogAsync(EmployeeNotification? employeeNotification = null)
+    {
+        var parameters = new DialogParameters();
+
+        if (employeeNotification != null)
+            parameters["model"] = employeeNotification;
+
+        var dialog = await DialogService.ShowAsync<EmployeeNotificationDialog>("Employee Notification Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            EmployeeNotifications = await employeeNotificationService.GetAll(Constants.EmployeeNotificationBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Delete
+    private async Task DeleteClicked(EmployeeNotification obj)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+                                "Confirm Delete",
+                                $"Are you sure you wanna delete {obj.EmployeeId}?",
+                                yesText: "Delete",
+                                cancelText: "Cancel");
+
+        if (result == null || !result.Value)
+            return;
+
+        var response = await employeeNotificationService.DeleteById(obj.Id, Constants.EmployeeNotificationBaseUrl);
+        if (response.Flag)
+        {
+            Snackbar.Add("Deleted Successfuly!", Severity.Success); ;
+            EmployeeNotifications = await employeeNotificationService.GetAll(Constants.EmployeeNotificationBaseUrl);
+            StateHasChanged();
+        }
+    }
+
+    //Edit
+    private async Task EditClicked(EmployeeNotification obj)
+    {
+        await OpenDialogAsync(obj);
+    }
+}

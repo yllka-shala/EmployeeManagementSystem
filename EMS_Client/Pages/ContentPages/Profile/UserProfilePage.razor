@@ -1,0 +1,157 @@
+﻿@page "/UserProfilePage"
+@using System.Security.Claims
+
+    <MudContainer MaxWidth="MaxWidth.Small" Class="mt-16">
+    <EditForm Model="@model" OnValidSubmit="OnValidSubmit" enctype="multipart/form-data">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="4" Style="background: rgba(255,255,255,0.9); border-radius: 10px;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center" Color="Color.Primary">Profile</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                <MudStack Row="true" Spacing="2">
+                    <div style="width: 50%">
+
+                        <MudTextField T="int" Label="Id" Variant="Variant.Outlined"
+                                      @bind-Value="model.Id" For="@(() => model.Id)"
+                                      InputType="InputType.Number" Class="mt-2" Disabled="true" />
+
+                        <MudTextField T="string" Label="Name" Variant="Variant.Outlined"
+                                      @bind-Value="model.Name" For="@(() => model.Name)"
+                                      InputType="InputType.Text" Class="mt-2" Disabled />
+
+                        <MudTextField T="string" Label="Role" Variant="Variant.Outlined"
+                                      @bind-Value="model.Role" For="@(() => model.Role)"
+                                      InputType="InputType.Text" Class="mt-2" Disabled />
+
+                        <MudTextField T="string" Label="Email" Variant="Variant.Outlined"
+                                      @bind-Value="model.Email" For="@(() => model.Email)"
+                                      InputType="InputType.Email" Class="mt-2" />
+                       
+                    </div>
+                    <div style="width: 50%">
+                        <MudField Label="Upload Profile Picture" Variant="Variant.Outlined" Disabled></MudField>
+                        <InputFile class="form-control" OnChange="HandleSingleFile" accept=".jpg,.jpeg,.png" />
+                        <MudImage class="mt-1" Src="@($"https://localhost:7217/Uploads/{model.ProfilePictureFileName}")"
+                                  Alt="Profile Picture" Height="100" Width="100" />
+                        @if (!string.IsNullOrEmpty(model.ProfilePictureFileName))
+                        {
+                            <div class="mt-1">
+                                <MudTooltip Text="Delete Profile Picture" Color="Color.Primary">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined"
+                                                   Color="Color.Primary" Size="Size.Small" OnClick="DeleteProfilePicture" />
+                                </MudTooltip>
+                            </div>
+                        }
+                    </div>
+                </MudStack>
+
+                   
+                    
+
+                <ValidationSummary />
+                </MudCardContent>
+
+                <MudCardActions Class="d-flex justify-space-between align-center px-4 pb-4">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                        Save
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </MudContainer>
+
+
+@code {
+
+    UserProfile model = new UserProfile();
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserProfile();
+    }
+
+    private async Task LoadUserProfile()
+    {
+        var client = await getHttpClient.GetPrivateHttpClient();
+        var user = (await AuthenticationState).User;
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            model.Id = int.Parse(user.FindFirst(ClaimTypes.NameIdentifier).Value);
+            model.Email = user.FindFirst(ClaimTypes.Email)?.Value;
+            model.Name = user.FindFirst(ClaimTypes.Name)?.Value;
+            model.Role = user.FindFirst(ClaimTypes.Role)?.Value;
+            var response = await client.GetAsync($"api/user/user-image/{model.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                model.ProfilePictureFileName = await response.Content.ReadAsStringAsync();
+            }
+        }
+    }
+
+    private async Task HandleSingleFile(InputFileChangeEventArgs e)
+    {
+        IBrowserFile imgFile = e.File;
+        string imageType = imgFile.ContentType;
+
+        var reSizeImage = await imgFile.RequestImageFileAsync(imageType, 300, 300);
+        var buffers = new byte[reSizeImage.Size];
+
+        await reSizeImage.OpenReadStream().ReadAsync(buffers);
+
+        model.Base64ImageData = $"data:{imageType};base64,{Convert.ToBase64String(buffers)}";
+        model.ProfilePictureFileName = imgFile.Name;
+    }
+
+    private async Task DeleteProfilePicture()
+    {
+        bool successCheck = false;
+
+        var client = await getHttpClient.GetPrivateHttpClient();
+        var response = await client.DeleteAsync($"api/user/delete-profile-picture/{model.Id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Failed to delete profile.", Severity.Error);
+            return;
+        }
+        else
+        {
+            Snackbar.Add("Profile picture deleted successfully!", Severity.Success);
+        }
+
+        var resultContent = await response.Content.ReadAsStringAsync();
+
+        await LoadUserProfile();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+    }
+
+    //Update
+    private async Task HandleSaveOperationEvent(UserProfile obj)
+    {
+        bool successCheck = false;
+
+        var client = await getHttpClient.GetPrivateHttpClient();
+        var response = await client.PostAsJsonAsync($"api/user/update-profile", obj);
+        if (!response.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Failed to update profile.", Severity.Error);
+            return;
+        }
+        else
+        {
+            Snackbar.Add("Profile updated successfully!", Severity.Success);
+        }
+
+        var resultContent = await response.Content.ReadAsStringAsync();
+
+        await LoadUserProfile();
+    }
+}

@@ -1,0 +1,48 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+@using EMS_Client.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@using Microsoft.JSInterop
+@using EMS_Client
+@using EMS_Client.Layout
+@using MudBlazor
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.ComponentModel.DataAnnotations
+
+@using EMSBaseLibrary.DTOs
+@using EMSBaseLibrary.Entities
+@using EMSBaseLibrary.Enums
+@using EMSBaseLibrary.Responses
+@using EMS_Client.Helpers
+
+@using EMS_Client.Pages
+@using EMS_Client.Pages.ContentPages.Profile
+
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@inject IUserService accountService
+@inject IGenericService<Roles> rolesService
+@inject IGenericService<Department> departmentService
+@inject IGenericService<EmployeePosition> positionService
+@inject IGenericService<Attendance> attendanceService
+@inject IGenericService<LeaveRequest> leaveRequestService
+@inject IGenericService<LeaveType> leaveTypeService
+@inject IGenericService<PerformanceReview> performanceReviewService
+@inject IGenericService<EmployeeDocument> employeeDocumentService
+@inject IGenericService<Notification> notificationService
+@inject IGenericService<EmployeeNotification> employeeNotificationService
+@inject IGenericService<Bonus> bonusService
+@inject IGenericService<Deduction> deductionService
+@inject IGenericService<Asset> assetService
+@inject IGenericService<EmployeeAsset> employeeAssetService
+@inject IGenericService<Employee> employeeService
+
+@inject GetHttpClient getHttpClient
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthStateProvider

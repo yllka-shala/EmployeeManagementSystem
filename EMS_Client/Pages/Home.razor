@@ -1,0 +1,32 @@
+﻿@page "/"
+@layout MainLayout
+
+<MudContainer>
+    <PageTitle>Home</PageTitle>
+
+    <MudText Typo="Typo.h3" Align="Align.Center" Class="mt-3">
+        Hello, world!
+    </MudText>
+
+    <MudText Typo="Typo.body1" Align="Align.Center">
+        Welcome to your new app.
+    </MudText>  
+</MudContainer>
+
+@code{
+    [CascadingParameter] public Task<AuthenticationState> AuthenticationState { get; set; }
+    protected async override Task OnInitializedAsync()
+    {
+        await CheckUserAuthentication();
+    }
+
+    private async Task CheckUserAuthentication()
+    {
+        var user = (await AuthenticationState).User;
+        if (!user.Identity!.IsAuthenticated)
+        {
+            NavManager.NavigateTo("/LoginPage", forceLoad: true);
+        }
+    }
+}
+

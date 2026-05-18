@@ -1,0 +1,99 @@
+﻿<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6" Align="Align.Left" Color="Color.Primary">Performance Review</MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="0">
+
+                <MudCardContent>
+                    <MudSelect T="int?" @bind-Value="model.EmployeeId" Label="Employee" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Employees)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.FirstName @item.LastName</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="int?" @bind-Value="model.ReviewerId" Label="Reviewer" Variant="Variant.Outlined" Clearable Placeholder="Select">
+                        @foreach (var item in _Reviewer)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.FirstName @item.LastName</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudDatePicker Label="ReviewDate" @bind-Date="model.ReviewDate" Variant="Variant.Outlined" Clearable="true"
+                                   For="@(() => model.ReviewDate)" ShowToolbar="false" />
+
+                    <MudTextField T="int" Label="Rating" Variant="Variant.Outlined"
+                                  @bind-Value="model.Rating" For="@(() => model.Rating)"
+                                  InputType="InputType.Number" Class="mt-2" />
+
+                    <MudTextField T="string" Label="Comments" Variant="Variant.Outlined"
+                                  @bind-Value="model.Comments" For="@(() => model.Comments)"
+                                  InputType="InputType.Text" Class="mt-2" />
+
+                </MudCardContent>
+
+                <MudCardActions Class="justify-end">
+                    <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary">Save</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public PerformanceReview model { get; set; } = new();
+
+    public List<Employee> _Employees = new List<Employee>();
+    public List<Employee> _Reviewer = new List<Employee>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Employees = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        _Reviewer = await employeeService.GetAll(Constants.EmployeeBaseUrl);
+        StateHasChanged();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Insert and Update
+    private async Task HandleSaveOperationEvent(PerformanceReview obj)
+    {
+        bool successCheck = false;
+        if (obj.Id > 0)
+        {
+            var result = await performanceReviewService.Update(obj, Constants.PerformanceReviewBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+        else
+        {
+            var result = await performanceReviewService.Insert(obj, Constants.PerformanceReviewBaseUrl);
+            successCheck = DisplayMessage(result.Flag);
+        }
+    }
+}

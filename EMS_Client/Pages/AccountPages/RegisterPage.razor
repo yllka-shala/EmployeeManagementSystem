@@ -1,0 +1,78 @@
+﻿@page "/RegisterPage"
+@layout AuthenticationLayout
+
+<div class="d-flex justify-center align-center" style="height: 100vh; width: 100%;">
+    <MudContainer MaxWidth="MaxWidth.Small">
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudCard Elevation="4" Style="background: rgba(255,255,255,0.9); border-radius: 10px;">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h5" Align="Align.Center" Color="Color.Primary">Create Your Account</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudTextField T="string" Label="FirstName" Class="mt-4" Variant="Variant.Outlined"
+                                  @bind-Value="model.FirstName" For="@(() => model.FirstName)" />
+
+                    <MudTextField T="string" Label="LastName" Class="mt-4" Variant="Variant.Outlined"
+                                  @bind-Value="model.LastName" For="@(() => model.LastName)" />
+
+                    <MudTextField T="string" Label="Email" Class="mt-4" Variant="Variant.Outlined"
+                                  @bind-Value="model.Email" For="@(() => model.Email)" />
+
+                    <MudTextField T="string" Label="Password" Class="mt-4" Variant="Variant.Outlined"
+                                  @bind-Value="model.Password" For="@(() => model.Password)"
+                                  InputType="InputType.Password" />
+
+                    <MudTextField T="string" Label="Confirm Password" Class="mt-4" Variant="Variant.Outlined"
+                                  @bind-Value="model.ConfirmPassword" For="@(() => model.ConfirmPassword)"
+                                  InputType="InputType.Password" />
+                    <ValidationSummary />
+                </MudCardContent>
+
+                <MudCardActions Class="d-flex justify-space-between align-center px-4 pb-4">
+                    <MudLink href="/LoginPage" Typo="Typo.body2">Already have an account? Login</MudLink>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">
+                        Register
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    </MudContainer>
+</div>
+
+@code {
+    Register model = new Register();
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        await HandleSaveOperationEvent(model);
+        NavManager.NavigateTo("/LoginPage", forceLoad: true);
+    }
+
+    private bool DisplayMessage(bool flag)
+    {
+        if (flag)
+        {
+            Snackbar.Add("Registration Successful!", Severity.Success); ;
+            return true;
+        }
+        else
+        {
+            Snackbar.Add("Something went wrong.", Severity.Error);
+            return false;
+        }
+    }
+
+    //Register
+    private async Task HandleSaveOperationEvent(Register obj)
+    {
+        bool successCheck = false;
+
+        var result = await accountService.CreateAsync(obj);
+        successCheck = DisplayMessage(result.Flag);
+
+    }
+}
