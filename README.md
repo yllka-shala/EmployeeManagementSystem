@@ -2,7 +2,7 @@
 
 A fullstack web application built with .NET 9 and C# to help a company manage their employees. 
 This project includes the backend (server side) which provides the functionality of the business logic built with ASP.NET Core Web API
-and the frontend (client side) built using Blazor Web Assembly and MudBlazor library.
+and the frontend (client side) built using Blazor WebAssembly (WASM) and MudBlazor library.
 
 ## ✨ Key Features
 
@@ -23,7 +23,7 @@ Employee Management System is a software that offers:
 ## 🛠 Tech Stack
 
 * **Language:** C#
-* **Framework:** .NET 9 / ASP.NET Core Web API / Blazor Web Assembly / MudBlazor
+* **Framework:** .NET 9 / ASP.NET Core Web API / Blazor WebAssembly (WASM) / MudBlazor
 * **Database:** SQL Server
 * **ORM:** Entity Framework Core / LINQ
 * **Security:** Authentication (JWT token based, hashed/salted user password).
