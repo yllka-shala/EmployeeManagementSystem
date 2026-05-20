@@ -1,6 +1,6 @@
 # 🚀 EmployeeManagementSystem
 
-> A fullstack web application built with .NET 9 and C# to help a company manage their employees. 
+A fullstack web application built with .NET 9 and C# to help a company manage their employees. 
 This project includes the backend (server side) which provides the functionality of the business logic built with ASP.NET Core Web API
 and the frontend (client side) built using Blazor Web Assembly and MudBlazor library.
 
